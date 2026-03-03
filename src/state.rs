@@ -82,9 +82,23 @@ impl GameState {
     ///
     /// Les autres messages peuvent être ignorés ici.
     pub fn update(&mut self, msg: &ServerMsg) {
-     
+        if let ServerMsg::State { tick, width, height, goal, obstacles, resources, agents } = &msg {
+            self.tick = *tick;
+            self.goal = *goal;
+            self.obstacles = obstacles.clone();
+            let result = agents.iter().find(|(id, _, _, _, _, _)| *id == self.agent_id);
+            if let Some(result) = result {
+                self.position = (result.4, result.5);
+            }
+            // let result = resources.iter().find(|(resou, _, _, _, _)| *id == self.agent_id);
+            // if let Some(result) = result {
+            //     self.position = (result.4, result.5);
+            // }
+        }
     }
 }
+    
+
 
 // TODO: Définir le type alias SharedState.
 //
