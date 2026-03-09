@@ -10,7 +10,6 @@
 // Ces imports seront utilisés dans votre implémentation.
 #[allow(unused_imports)]
 use std::collections::HashMap;
-use std::{collections::hash_map, vec};
 #[allow(unused_imports)]
 use std::sync::{Arc, Mutex};
 #[allow(unused_imports)]
@@ -82,7 +81,7 @@ impl GameState {
     ///
     /// Les autres messages peuvent être ignorés ici.
     pub fn update(&mut self, msg: &ServerMsg) {
-        if let ServerMsg::State { tick, width, height, goal, obstacles, resources, agents } = &msg {
+        if let ServerMsg::State { tick, width: _, height: _, goal, obstacles, resources, agents } = &msg {
             self.tick = *tick;
             self.goal = *goal;
             self.obstacles = obstacles.clone();

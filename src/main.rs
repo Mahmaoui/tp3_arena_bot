@@ -201,7 +201,7 @@ const NUM_MINERS: usize = 4;
 
 fn main() {
     println!("[*] Connexion à {SERVER_URL}...");
-    let (mut ws, _response) = connect(SERVER_URL).expect("impossible de se connecter au serveur");
+    let ( ws, _response) = connect(SERVER_URL).expect("impossible de se connecter au serveur");
     let ws = Arc::new(Mutex::new(ws));
     println!("[*] Connecté !");
 
