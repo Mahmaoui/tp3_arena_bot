@@ -8,7 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // TODO: Importer les types nécessaires de state.rs
-// use crate::state::GameState;
+pub use crate::state::GameState;
 
 // TODO: Définir le trait Strategy.
 //
@@ -17,38 +17,64 @@
 //   - Être Send (pour pouvoir être utilisé dans un contexte multi-thread)
 //   - Avoir une méthode next_move qui retourne un déplacement optionnel
 //
-// pub trait Strategy: Send {
-//     /// Décide du prochain mouvement en fonction de l'état du jeu.
-//     ///
-//     /// Retourne Some((dx, dy)) avec dx, dy ∈ {-1, 0, 1}, ou None pour rester sur place.
-//     fn next_move(&self, state: &GameState) -> Option<(i8, i8)>;
-// }
+pub trait Strategy: Send {
+    /// Décide du prochain mouvement en fonction de l'état du jeu.
+    ///
+    /// Retourne Some((dx, dy)) avec dx, dy ∈ {-1, 0, 1}, ou None pour rester sur place.
+    fn next_move(&self, state: &GameState) -> Option<(i8, i8)>;
+}
 
 // TODO: Implémenter NearestResourceStrategy.
 //
 // Cette stratégie se dirige vers la ressource la plus proche (distance de Manhattan).
 //
-// pub struct NearestResourceStrategy;
-//
-// impl Strategy for NearestResourceStrategy {
-//     fn next_move(&self, state: &GameState) -> Option<(i8, i8)> {
-//         // 1. Trouver la ressource la plus proche en distance de Manhattan :
-//         //    distance = |resource.x - position.x| + |resource.y - position.y|
-//         //
-//         //    Indice : utilisez .iter().min_by_key(|r| ...)
-//         //
-//         // 2. Calculer la direction (dx, dy) vers cette ressource :
-//         //    - Si resource.x > position.x → dx = 1
-//         //    - Si resource.x < position.x → dx = -1
-//         //    - Sinon dx = 0
-//         //    - Idem pour dy
-//         //
-//         //    Indice : utilisez i16 pour les calculs puis .signum() puis cast en i8
-//         //
-//         // 3. Retourner Some((dx, dy)), ou None si aucune ressource
-//         todo!()
-//     }
-// }
+pub struct NearestResourceStrategy;
+
+impl Strategy for NearestResourceStrategy {
+    fn next_move(&self, state: &GameState) -> Option<(i8, i8)> {
+        // 1. Trouver la ressource la plus proche en distance de Manhattan :
+        //    distance = |resource.x - position.x| + |resource.y - position.y|
+        let agent = state
+            .agents
+            .iter()
+            .find(|r| r.id == state.agent_id)
+            .unwrap();
+        let ressource_min = state
+            .resources
+            .iter()
+            .min_by_key(|r| {
+                (r.x as i16 - agent.x as i16).abs() + (r.y as i16 - agent.y as i16).abs()
+            })
+            .unwrap();
+        let mut dx: i8 = 0;
+        let mut dy: i8 = 0;
+        if ressource_min.x > agent.x {
+            dx = 1;
+        }
+        if ressource_min.x < agent.x {
+            dx = -1;
+        }
+        if ressource_min.y > agent.y {
+            dy = 1;
+        }
+        if ressource_min.y < agent.y {
+            dy = -1;
+        }
+
+        //    Indice : utilisez .iter().min_by_key(|r| ...)
+        //
+        // 2. Calculer la direction (dx, dy) vers cette ressource :
+        //    - Si resource.x > position.x → dx = 1
+        //    - Si resource.x < position.x → dx = -1
+        //    - Sinon dx = 0
+        //    - Idem pour dy
+        //
+        //    Indice : utilisez i16 pour les calculs puis .signum() puis cast en i8
+        //
+        // 3. Retourner Some((dx, dy)), ou None si aucune ressource
+        return Some((dx, dy));
+    }
+}
 
 // ─── BONUS : Implémenter d'autres stratégies ────────────────────────────────
 //

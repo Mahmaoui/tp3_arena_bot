@@ -10,7 +10,7 @@
 // Ces imports seront utilisés dans votre implémentation.
 #[allow(unused_imports)]
 use std::collections::HashMap;
-use std::collections::hash_map;
+use std::{collections::hash_map, vec};
 #[allow(unused_imports)]
 use std::sync::{Arc, Mutex};
 #[allow(unused_imports)]
@@ -54,14 +54,14 @@ pub struct AgentInfo {
 //   - team_scores: HashMap<String, u32>
 //
 pub struct GameState {
-    agent_id: Uuid,
+    pub agent_id: Uuid,
     tick: u64,
     position: (u16, u16),
     map_size: (u16, u16),
     goal: u32,
     obstacles: Vec<(u16, u16)>,
-    resources: Vec<ResourceInfo>,
-    agents: Vec<AgentInfo>,
+    pub resources: Vec<ResourceInfo>,
+    pub agents: Vec<AgentInfo>,
     team_scores: HashMap<String, u32>,
 }
 
@@ -90,15 +90,21 @@ impl GameState {
             if let Some(result) = result {
                 self.position = (result.4, result.5);
             }
-            // let result = resources.iter().find(|(resou, _, _, _, _)| *id == self.agent_id);
-            // if let Some(result) = result {
-            //     self.position = (result.4, result.5);
-            // }
+            let mut res_temp: Vec<ResourceInfo> = vec![];
+            for ress in resources {
+                let mut one_res_temp: ResourceInfo = ResourceInfo { resource_id: (Uuid::new_v4()), x: (0), y: (0), expires_at: (0), value: (0) };
+                one_res_temp.resource_id = ress.0;
+                one_res_temp.expires_at = ress.3;
+                one_res_temp.value = ress.4;
+                one_res_temp.x = ress.1;
+                one_res_temp.y = ress.2;
+                res_temp.push(one_res_temp);
+            }
+            self.resources = res_temp;
         }
     }
 }
     
-
 
 // TODO: Définir le type alias SharedState.
 //
@@ -111,3 +117,8 @@ impl GameState {
 // pub fn new_shared_state(agent_id: Uuid) -> SharedState {
 //     Arc::new(Mutex::new(GameState::new(agent_id)))
 // }
+
+pub type SharedState = Arc<Mutex<GameState>>;
+pub fn new_shared_state(agent_id: Uuid) -> SharedState {
+     Arc::new(Mutex::new(GameState::new(agent_id)))
+}
