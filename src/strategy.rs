@@ -38,14 +38,14 @@ impl Strategy for NearestResourceStrategy {
             .agents
             .iter()
             .find(|r| r.id == state.agent_id)
-            .unwrap();
+            ?;
         let ressource_min = state
             .resources
             .iter()
             .min_by_key(|r| {
                 (r.x as i16 - agent.x as i16).abs() + (r.y as i16 - agent.y as i16).abs()
             })
-            .unwrap();
+            ?;
         let mut dx: i8 = 0;
         let mut dy: i8 = 0;
         if ressource_min.x > agent.x {

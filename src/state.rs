@@ -52,6 +52,7 @@ pub struct AgentInfo {
 //   - agents: Vec<AgentInfo>
 //   - team_scores: HashMap<String, u32>
 //
+#[derive(Debug, Clone)]
 pub struct GameState {
     pub agent_id: Uuid,
     tick: u64,
