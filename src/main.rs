@@ -202,23 +202,28 @@ const NUM_MINERS: usize = 4;
 fn main() {
     println!("[*] Connexion à {SERVER_URL}...");
     let (mut ws, _response) = connect(SERVER_URL).expect("impossible de se connecter au serveur");
+    let ws = Arc::new(Mutex::new(ws));
     println!("[*] Connecté !");
 
-    let agent_id: Uuid = match read_server_msg(&mut ws) {
+    let agent_id: Uuid = {
+        let mut guard = ws.lock().unwrap();
+     match read_server_msg(&mut *guard) {
         Some(ServerMsg::Hello { agent_id, tick_ms }) => {
             println!("[*] Hello reçu : agent_id={agent_id}, tick={tick_ms}ms");
             agent_id
         }
         other => panic!("premier message inattendu : {other:?}"),
-    };
-
+    }
+};
+{
+    let mut guard = ws.lock().unwrap();
     send_client_msg(
-        &mut ws,
+        &mut *guard,
         &ClientMsg::Register {
             team: TEAM_NAME.into(),
             name: AGENT_NAME.into(),
         },
-    );
+    );}
     println!("[*] Enregistré en tant que {AGENT_NAME} (équipe {TEAM_NAME})");
 
     // 1. État partagé
@@ -235,13 +240,18 @@ fn main() {
 
     // Thread lecteur WS : lit en boucle, met à jour le state, forward via tx
     let shared_state_reader = Arc::clone(&shared_state);
+    let tx_clone = tx.clone();
+    let ws_reader = Arc::clone(&ws);
     thread::spawn(move || {
         loop {
-            let msg = ws.read().unwrap().into_text().unwrap();
-            let parsed: ServerMsg = serde_json::from_str(&msg).unwrap();
+            let msg_text = {
+                let mut guard = ws_reader.lock().unwrap();
+                guard.read().unwrap().into_text().unwrap()
+            };
+            let parsed: ServerMsg = serde_json::from_str(&msg_text).unwrap();
             shared_state_reader.lock().unwrap().update(&parsed);
-            // Forwarder tous les messages au thread principal
-            tx.send(parsed).unwrap();
+            tx_clone.send(parsed).unwrap();
+
         }
     });
 
@@ -265,7 +275,8 @@ fn main() {
         // b) Vérifier si le MinerPool a trouvé un nonce → envoyer PowSubmit
         if let Some(result) = miner_pool.try_recv() {
             println!("[+] Nonce trouvé : {}", result.nonce);
-            send_client_msg(&mut ws, &ClientMsg::PowSubmit {
+            let mut guard = ws.lock().unwrap();
+            send_client_msg(&mut *guard, &ClientMsg::PowSubmit {
                 tick: result.tick,
                 resource_id: result.resource_id,
                 nonce: result.nonce,
@@ -278,7 +289,8 @@ fn main() {
             strategy.next_move(&state)
         };
         if let Some((dx, dy)) = move_opt {
-            send_client_msg(&mut ws, &ClientMsg::Move { dx, dy });
+            let mut guard = ws.lock().unwrap();
+            send_client_msg(&mut *guard, &ClientMsg::Move { dx, dy });
         }
 
         thread::sleep(Duration::from_millis(50));
